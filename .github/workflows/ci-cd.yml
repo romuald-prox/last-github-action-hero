@@ -23,18 +23,49 @@ jobs:
     runs-on: ubuntu-26.04 # Machine "ubuntu" fournie par Github
     steps:
       # TODO CI - 2.1. Récupération de l'équipement
-
+      - uses: actions/checkout@v7 # récupération du code
+     
       # TODO CI - 2.2 Préparation de l'équipe
-
+      - uses: actions/setup-node@v7 # configuration de NodeJS
+        with:
+          node-version: 24 # sélection de la version
+          cache: npm
+      - run: npm ci # PREMIÈRE COMMANDE : installation des dépendances du projet sur le RUNNER
 
       # TODO CI - 3. Die Hard : vérification statique
-
+      - id: lint
+        name: Die Hard - Vérification statique - Lint
+        run: npm run lint
       # TODO CI - 4. Terminator : tests unitaires
-
+      - id: test
+        name: Terminator - Tests unitaires
+        if: ${{ !cancelled() }}
+        run: npm test
       # TODO CI - 5. Commando : build
-
+      - id: build
+        name: Build
+        run: <TODO-ajouter-commande>
+        env:
+          VITE_COMMIT: ${{ github.sha }} # déclaration d'une variable d'environnement accessible au runner
       # TODO CI - 6. Résumé 1ère mission -> Github Markdown
-
+      - name: Rapport CI
+        if: always()
+        env: # Déclaration de plusieurs variables réutilisables dans le rapport
+           LINT: ${{ steps.lint.outcome }}
+           TEST: ${{ steps.test.outcome }}
+           BUILD: ${{ steps.build.outcome }}
+        run: |
+         {
+           echo "## Rapport : CI"
+           echo ""
+           echo "| Étape | Résultat |"
+           echo "|---|---|"
+           echo "| Vérification statique | $LINT |"
+           echo "| Tests unitaires | $TEST |"
+           echo "| Build | $BUILD |"
+           echo ""
+           echo "_Réalisé par ${{ github.actor }} · commit \`${GITHUB_SHA::7}\`_"
+         } >> "$GITHUB_STEP_SUMMARY"
   # Phase 2 - CD
   cd:
     needs: ci # Dépendance avec CI
